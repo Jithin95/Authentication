@@ -7,6 +7,8 @@ const Users = mongoose.model('Users');
 //POST new user route (optional, everyone has access)
 router.post('/register', auth.optional, (req, res, next) => {
   const user = req.body;
+  console.log("User "+ user);
+
   if(!user.email) {
     return res.status(422).json({
         status : false,
@@ -21,12 +23,32 @@ router.post('/register', auth.optional, (req, res, next) => {
     });
   }
 
-  const finalUser = new Users(user);
+  if (user.email || user.password) {
+    console.log("If else");
+    Users.findOne({email: user.email}, (err, dbuser)=> {
+      if (err) {
+        console.log(err);
+        res.status(500).json({
+          status: false,
+          msg : "Email Already Exists"+err
+        })
+      } else {
+        if (dbuser) {
+            res.status(409).json({
+              status: false,
+              msg : "Email Already Exists"
+            })
+        } else {
+          const finalUser = new Users(user);
 
-  finalUser.setPassword(user.password);
+          finalUser.setPassword(user.password);
 
-  return finalUser.save()
-    .then(() => res.json({ user: finalUser.toAuthJSON() }));
+          return finalUser.save()
+            .then(() => res.json({ user: finalUser.toAuthJSON() }));
+        }
+      }
+    })
+  }
 });
 
 //POST login route (optional, everyone has access)
