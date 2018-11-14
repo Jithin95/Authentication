@@ -5,7 +5,22 @@ const jwt = require('jsonwebtoken');
 const { Schema } = mongoose;
 
 const UsersSchema = new Schema({
+  username: String,
   email: String,
+  usertype: String,
+  is_profile_updated: { type: Boolean, default: false  },
+  other_details : {
+      mobile : String,
+      profile_skills : [String],
+      high_qualification : String,
+      resume : String,
+      
+      c_name : String,
+      c_email: String,
+      designation: String,
+      c_address : String,
+      c_description : String
+  },
   hash: String,
   salt: String,
 });
@@ -21,6 +36,7 @@ UsersSchema.methods.validatePassword = function(password) {
 };
 
 UsersSchema.methods.generateJWT = function() {
+    console.log("generateJWT");
   const today = new Date();
   const expirationDate = new Date(today);
   expirationDate.setDate(today.getDate() + 60);
@@ -33,6 +49,7 @@ UsersSchema.methods.generateJWT = function() {
 }
 
 UsersSchema.methods.toAuthJSON = function() {
+    console.log("toAuthJSON");
   return {
     _id: this._id,
     email: this.email,

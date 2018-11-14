@@ -3,9 +3,10 @@ const passport = require('passport');
 const router = require('express').Router();
 const auth = require('../auth');
 const Users = mongoose.model('Users');
+const UserDetail = mongoose.model('UserDetail');
 
 //POST new user route (optional, everyone has access)
-router.post('/register', auth.optional, (req, res, next) => {
+router.post('/register', (req, res, next) => {
   const user = req.body;
   console.log("User "+ user);
 
@@ -52,7 +53,7 @@ router.post('/register', auth.optional, (req, res, next) => {
 });
 
 //POST login route (optional, everyone has access)
-router.post('/login', auth.optional, (req, res, next) => {
+router.post('/login', (req, res, next) => {
   const user = req.body;
   console.log(user);
 
@@ -69,9 +70,11 @@ router.post('/login', auth.optional, (req, res, next) => {
           msg: 'Password is required'
     });
   }
-
+    console.log("Passport Authenticate");
   return passport.authenticate('local', { session: false }, (err, passportUser, info) => {
+
     if(err) {
+        console.log("Authenticare error");
       return next(err);
     }
 
@@ -83,6 +86,42 @@ router.post('/login', auth.optional, (req, res, next) => {
 
     return res.status(400).send(info);
   })(req, res, next);
+});
+
+//Update Profile
+router.post('/updateprofile', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  userDetail = new UserDetail(req.body)
+  console.log("User Detail " + userDetail);
+
+  Users.update({_id: id}, { other_details: userDetail}, (err, out) => {
+      if (err) {
+          res.status(500).json({msg : `Something went wrong ${err} `})
+      } else {
+          Users.update({_id:id}, {$set: {is_profile_updated: true}}, (err, out)=> {
+              if (err) {
+
+                      res.status(500).json({msg : `Something went wrong ${err} `})
+              } else {
+
+                  res.status(200).json({status : "success" , msg : "Profile updated"})
+              }
+          })
+      }
+  })
+});
+
+// GEt profile update status
+router.get('/profilestatus', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+
+  return Users.find({_id: id}, 'is_profile_updated', function (err, user) {
+      if(!user) {
+        return res.sendStatus(400);
+    } else {
+        return res.json({ status  :"success", is_profile_updated: user[0].is_profile_updated });
+    }
+});
 });
 
 //GET current route (required, only authenticated users have access)
