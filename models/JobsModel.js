@@ -4,17 +4,18 @@ const { Schema } = mongoose;
 
 const JobsSchema = new Schema({
     jobheading:String,
-    expreience:String,
+    experience:String,
     keyskills:String,
     jobDescription:String,
     salarypackage : String,
     lastUpdated: { type: Date, default: Date.now },
-    userId: String
+    userInfo: Schema.Types.Mixed
 });
 
 
-JobsSchema.methods.setUserId = function(userid) {
-  this.userId = userid;
+
+JobsSchema.methods.setUserInfo = function(userInfo) {
+  this.userInfo = userInfo;
 };
 
 

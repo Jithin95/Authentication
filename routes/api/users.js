@@ -117,22 +117,71 @@ router.post('/updateprofile', auth.required, (req, res, next) => {
   })
 });
 
-//Update Profile
+//Add Job
 router.post('/addjob', auth.required, (req, res, next) => {
   const { payload: { id } } = req;
   addJob = new AddJob(req.body)
-  addJob.setUserId(id)
+
   console.log("User Detail " + addJob);
-
-  addJob.save((err, out)=> {
-      if (err) {
-          res.status(500).json({status: false, msg: "Server error "+ err})
+  console.log(id);
+  Users.findOne({_id: id}, (err, dbuser)=> {
+    if (err) {
+      console.log(err);
+      res.status(500).json({
+        status: false,
+        msg : err
+      })
+    } else {
+      if (dbuser) {
+          const finalUser = new Users(dbuser);
+          addJob.setUserInfo(finalUser)
+            addJob.save((err, out)=> {
+                if (err) {
+                    res.status(500).json({status: false, msg: "Server error "+ err})
+                } else {
+                    res.status(200).json({status: true, msg: "Job added successfully"});
+                }
+            })
       } else {
-          res.status(200).json({status: true, msg: "Job added successfully"});
+          res.status(401).json({status: false, msg: "Cannot find User"});
       }
+    }
   })
+});
 
-
+// Get Jobs
+router.post('/getjob', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  console.log(req.body);
+  usertype = req.body.usertype
+  console.log("Get Job Api "+ usertype);
+  if (usertype == 'jobseeker') {
+      console.log("Jobseeker jobs");
+      AddJob.find({}, (err, jobs)=> {
+        if (err) {
+            res.status(500).json({status: false, msg: "Server error "+ err})
+        }  else {
+            if (jobs) {
+                res.status(200).json({status: true, jobs: jobs});
+            } else {
+                res.status(401).json({status: false, msg: "Cannot find jobs"});
+            }
+        }
+      })
+  } else {
+      console.log("Employer jobs");
+      AddJob.find({'userInfo._id': mongoose.Types.ObjectId(id)}, (err, jobs)=> {
+        if (err) {
+            res.status(500).json({status: false, msg: "Server error "+ err})
+        }  else {
+            if (jobs) {
+                res.status(200).json({status: true, jobs: jobs});
+            } else {
+                res.status(401).json({status: false, msg: "Cannot find jobs"});
+            }
+        }
+      })
+  }
 
 });
 

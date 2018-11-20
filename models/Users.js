@@ -19,6 +19,7 @@ const UsersSchema = new Schema({
       c_email: String,
       designation: String,
       c_address : String,
+      c_location : String,
       c_description : String
   },
   hash: String,
