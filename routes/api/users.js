@@ -1,9 +1,15 @@
 const mongoose = require('mongoose');
 const passport = require('passport');
+
+var multer = require('multer');
+var path = require('path');
+
 const router = require('express').Router();
 const auth = require('../auth');
 const Users = mongoose.model('Users');
 const UserDetail = mongoose.model('UserDetail');
+const AddJob = mongoose.model('Jobs');
+
 
 //POST new user route (optional, everyone has access)
 router.post('/register', (req, res, next) => {
@@ -111,6 +117,25 @@ router.post('/updateprofile', auth.required, (req, res, next) => {
   })
 });
 
+//Update Profile
+router.post('/addjob', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  addJob = new AddJob(req.body)
+  addJob.setUserId(id)
+  console.log("User Detail " + addJob);
+
+  addJob.save((err, out)=> {
+      if (err) {
+          res.status(500).json({status: false, msg: "Server error "+ err})
+      } else {
+          res.status(200).json({status: true, msg: "Job added successfully"});
+      }
+  })
+
+
+
+});
+
 // GEt profile update status
 router.get('/profilestatus', auth.required, (req, res, next) => {
   const { payload: { id } } = req;
@@ -122,6 +147,70 @@ router.get('/profilestatus', auth.required, (req, res, next) => {
         return res.json({ status  :"success", is_profile_updated: user[0].is_profile_updated });
     }
 });
+});
+
+//GET current route (required, only authenticated users have access)
+router.get('/currentuserdetail', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+
+  return Users.findById(id)
+    .then((user) => {
+      if(!user) {
+        return res.sendStatus(400);
+      }
+
+      return res.json(user.userDetail() );
+    });
+});
+
+
+// function checkFiletype(file, cb) {
+//     const fileTypes = /.pdf|.doc|.docx|.odt/;
+//     const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+//     console.log(extname);
+//     const mimetype = fileTypes.test(file.mimetype);
+//     console.log(mimetype);
+//     if (mimetype && extname) {
+//         return cb(null);
+//     } else {
+//         cb("Error: File only");
+//     }
+// }
+
+var getFields = multer();
+//Update Profile
+router.post('/uploadfile', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  fileName = ""
+  file = req.files
+
+  const storage = multer.diskStorage({
+      destination : './public/uploads/',
+      filename : (req, file, cb)=> {
+          fileName = id+path.extname(file.originalname);
+          cb(null, id+path.extname(file.originalname));
+      }
+  });
+
+  const upload = multer({
+      storage: storage,
+      limits : {fileSize : 5000000}, // 5 mb
+      // fileFilter : (req, file, cb)=> {
+      //     checkFiletype(file, cb);
+      // }
+  }).single('fileField');
+
+
+  upload(req, res, (err)=> {
+      if(err) {
+          console.log("Error "+err);
+          res.status(500).json({status: false, msg : err});
+      } else {
+          res.send({msg : "success", status: true, filepath : fileName });
+      }
+  })
+
+
 });
 
 //GET current route (required, only authenticated users have access)

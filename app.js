@@ -5,7 +5,6 @@ const session = require('express-session');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-
 //Initiate our app
 const app = express();
 
@@ -22,6 +21,7 @@ mongoose.set('debug', true);
 //Models & routes
 require('./models/Users');
 require('./models/UserDetails');
+require('./models/JobsModel');
 require('./config/passport');
 app.use(require('./routes'));
 

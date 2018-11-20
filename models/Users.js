@@ -14,7 +14,7 @@ const UsersSchema = new Schema({
       profile_skills : [String],
       high_qualification : String,
       resume : String,
-      
+
       c_name : String,
       c_email: String,
       designation: String,
@@ -49,11 +49,19 @@ UsersSchema.methods.generateJWT = function() {
 }
 
 UsersSchema.methods.toAuthJSON = function() {
-    console.log("toAuthJSON");
   return {
     _id: this._id,
     email: this.email,
     token: this.generateJWT(),
+    usertype: this.usertype,
+  };
+};
+
+UsersSchema.methods.userDetail = function() {
+  return {
+    _id: this._id,
+    email: this.email,
+    usertype: this.usertype,
   };
 };
 
