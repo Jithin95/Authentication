@@ -9,6 +9,7 @@ const JobsSchema = new Schema({
     jobDescription:String,
     salarypackage : String,
     lastUpdated: { type: Date, default: Date.now },
+    lastAppplyDate: Date,
     userInfo: Schema.Types.Mixed
 });
 

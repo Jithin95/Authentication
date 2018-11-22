@@ -10,7 +10,6 @@ const Users = mongoose.model('Users');
 const UserDetail = mongoose.model('UserDetail');
 const AddJob = mongoose.model('Jobs');
 
-
 //POST new user route (optional, everyone has access)
 router.post('/register', (req, res, next) => {
   const user = req.body;
@@ -147,6 +146,78 @@ router.post('/addjob', auth.required, (req, res, next) => {
       }
     }
   })
+});
+
+//Add Job
+router.post('/updatejob', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  const jobId = req.body.jobId
+  addJob = new AddJob(req.body.job)
+
+  console.log("User Detail " + addJob);
+  console.log(id);
+  Users.findOne({_id: id}, (err, dbuser)=> {
+    if (err) {
+      console.log(err);
+      res.status(500).json({
+        status: false,
+        msg : err
+      })
+    } else {
+      if (dbuser) {
+          const finalUser = new Users(dbuser);
+
+          var query = {'_id':jobId};
+          addJob.setUserInfo(finalUser)
+	addJob._id = jobId
+            AddJob.findOneAndUpdate(query, addJob, function(err, doc){
+                if (err) {
+                    res.status(500).json({status: false, msg: "Server error "+ err})
+                } else {
+                    res.status(200).json({status: true, msg: "Job Updated successfully"});
+                }
+            });
+      } else {
+          res.status(401).json({status: false, msg: "Cannot find User"});
+      }
+    }
+  })
+});
+
+//Delete Job
+router.post('/deletejob', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  const jobId = req.body.jobId
+
+    AddJob.findOne({_id: jobId}).remove((err, job)=> {
+        if (err) {
+            res.status(500).json({status: false, msg: "Server error "+ err})
+        }  else {
+            if (job) {
+                res.status(200).json({status: true, msg: "Job Deleted Successfully"});
+            } else {
+                res.status(401).json({status: false, msg: "Cannot find jobs"});
+            }
+        }
+    })
+});
+
+//Get single Job
+router.post('/getjobdetail', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  const jobId = req.body.jobId
+
+    AddJob.findOne({_id: jobId}, (err, job)=> {
+        if (err) {
+            res.status(500).json({status: false, msg: "Server error "+ err})
+        }  else {
+            if (job) {
+                res.status(200).json({status: true, job: job});
+            } else {
+                res.status(401).json({status: false, msg: "Cannot find jobs"});
+            }
+        }
+    })
 });
 
 // Get Jobs
