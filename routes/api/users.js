@@ -9,6 +9,7 @@ const auth = require('../auth');
 const Users = mongoose.model('Users');
 const UserDetail = mongoose.model('UserDetail');
 const AddJob = mongoose.model('Jobs');
+const AppliedJobs = mongoose.model('AppliedJobs');
 
 //POST new user route (optional, everyone has access)
 router.post('/register', (req, res, next) => {
@@ -138,6 +139,9 @@ router.post('/addjob', auth.required, (req, res, next) => {
                 if (err) {
                     res.status(500).json({status: false, msg: "Server error "+ err})
                 } else {
+                    appliedJob = new AppliedJobs()
+                    appliedJob.jobId = out._id
+                    appliedJob.save()
                     res.status(200).json({status: true, msg: "Job added successfully"});
                 }
             })
@@ -154,8 +158,6 @@ router.post('/updatejob', auth.required, (req, res, next) => {
   const jobId = req.body.jobId
   addJob = new AddJob(req.body.job)
 
-  console.log("User Detail " + addJob);
-  console.log(id);
   Users.findOne({_id: id}, (err, dbuser)=> {
     if (err) {
       console.log(err);
@@ -169,7 +171,7 @@ router.post('/updatejob', auth.required, (req, res, next) => {
 
           var query = {'_id':jobId};
           addJob.setUserInfo(finalUser)
-	addJob._id = jobId
+	         addJob._id = jobId
             AddJob.findOneAndUpdate(query, addJob, function(err, doc){
                 if (err) {
                     res.status(500).json({status: false, msg: "Server error "+ err})
@@ -194,6 +196,13 @@ router.post('/deletejob', auth.required, (req, res, next) => {
             res.status(500).json({status: false, msg: "Server error "+ err})
         }  else {
             if (job) {
+                AppliedJobs.find({jobId: jobId}).remove((err, deletedjob)=> {
+                        if (err) {
+                            console.log("Cannot able to delete Job from applied"+err);
+                        } else {
+                            console.log("Applied Job also deleted");
+                        }
+                })
                 res.status(200).json({status: true, msg: "Job Deleted Successfully"});
             } else {
                 res.status(401).json({status: false, msg: "Cannot find jobs"});
@@ -255,6 +264,97 @@ router.post('/getjob', auth.required, (req, res, next) => {
   }
 
 });
+
+
+router.post('/applyjob', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  usertype = req.body.usertype
+  jobId = req.body.jobId
+  if (usertype == 'jobseeker') {
+      Users.findOne({_id: id}, (err, dbuser)=> {
+        if (err) {
+          console.log(err);
+        } else {
+          if (dbuser) {
+              const finalUser = new Users(dbuser);
+              let saveUser = {
+                  userId: id,
+                  username: finalUser.username,
+                  email: finalUser.email,
+              }
+              AppliedJobs.findOneAndUpdate({jobId: jobId},{ $addToSet: {appliedUser: saveUser} } ,(err, jobs)=> {
+                if (err) {
+                    res.status(500).json({status: false, msg: "Server error "+ err})
+                }  else {
+                    if (jobs) {
+                        res.status(200).json({status: true, msg: "Job Applied"});
+                    } else {
+                        res.status(401).json({status: false, msg: "Cannot find jobs"});
+                    }
+                }
+              })
+
+
+          } else {
+              res.status(401).json({status: false, msg: "Cannot find User"});
+          }
+        }
+      })
+
+
+
+  } else {
+      res.status(401).json({status: false, msg: "You dont have permission"});
+  }
+});
+
+router.post('/getappliedjob', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  usertype = req.body.usertype
+  jobId = req.body.jobId
+  if (usertype == 'employer') {
+
+      AppliedJobs.find({jobId: jobId}, (err, appliedjobs)=> {
+        if (err) {
+            res.status(500).json({status: false, msg: "Server error "+ err})
+        }  else {
+            if (appliedjobs) {
+                res.status(200).json({status: true, appliedjobs});
+            } else {
+                res.status(401).json({status: false, msg: "Cannot find jobs"});
+            }
+        }
+      })
+  } else {
+      res.status(401).json({status: false, msg: "You dont have permission"});
+  }
+});
+
+router.post('/checkappliedjob', auth.required, (req, res, next) => {
+  const { payload: { id } } = req;
+  usertype = req.body.usertype
+  jobId = req.body.jobId
+  if (usertype == 'jobseeker') {
+
+      AppliedJobs.find({$and: [{jobId: jobId},{appliedUser: {$elemMatch: {userId: id}}}]},
+      (err, appliedjobs)=> {
+          console.log("Server response");
+          console.log(err, appliedjobs);
+        if (err) {
+            res.status(500).json({status: false, msg: "Server error "+ err})
+        }  else {
+            if (appliedjobs && appliedjobs.length > 0 ) {
+                res.status(200).json({status: true, msg: "Already Applied"});
+            } else {
+                res.status(200).json({status: false, msg: "Not Applied"});
+            }
+        }
+      })
+  } else {
+      res.status(401).json({status: false, msg: "You dont have permission"});
+  }
+});
+
 
 // GEt profile update status
 router.get('/profilestatus', auth.required, (req, res, next) => {
