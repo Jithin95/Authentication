@@ -16,7 +16,6 @@ app.use(session({ secret: 'passport-tutorial', cookie: { maxAge: 60000 }, resave
 
 //Configure Mongoose
 // mongoose.connect('mongodb://localhost/jobportal');
-// mongodb://<user>:<pass>@ds147190.mlab.com:47190/jobportal
 mongoose.connect('mongodb://localhost/jobportal', (error)=> {
   if (error) {
     console.log("Database Failed to connect"+ error);
