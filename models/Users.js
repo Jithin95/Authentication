@@ -55,6 +55,7 @@ UsersSchema.methods.toAuthJSON = function() {
     email: this.email,
     token: this.generateJWT(),
     usertype: this.usertype,
+    username: this.username,
   };
 };
 
